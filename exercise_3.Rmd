@@ -1,0 +1,216 @@
+---
+title: "Ex3DA2223_Alzbeta_Reinhardova"
+author: "Alzbeta_Reinhardova_6180079"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+#1.1.1 General questions on moderation 
+##1.
+moderation = interaction -> regression analysis and is a relationship between two variables when they depend on another third variable (moderator variable)
+
+##2.
+main effect is between the independent and dependet variable -> e.g. time of day (day, night), number of phone calls, gender (moderator, man, woman, non-binary)
+main effect = would be comparison whether there is more phone calls during the day or night
+simple effect = would be which gender call more during day and night 
+main effect = first order effect 
+
+##3.
+to avoid multicollinearity issues that may disturb our outcomes and make it not valid
+to have better interpretation of the results 
+
+##4.
+the increase of a grade is 0.018 for every consumed coffee -> that is what the beta means in this contex
+
+##5.
+anova and regression are both linear models => the difference is that regression is a method that is looking for a relationships between variables to make predictions of the DV (dependent) based on IV (independent) 
+ANOVA is a statistical tool applied to unrelated groups looking for a commmon mean = analysis of variance 
+only for categorical = anova
+also for continuous = ancova 
+
+##6.
+
+Beta 1 and beta 2 are the lower (use instead of lower he likes it  = first) order effects of X1 and X2 while the interaction effect beta 3 is a higher order effect.
+
+
+#1.1.2 Interaction with categorical predictors 
+##1.
+Factorial designs -> often used Anova 
+
+##2.
+no -> control is a group and is not a factor = some experiments = within-subject -> has control group within so I look at before treatment and after treatment  instead of companring outcomes between groups 
+
+##3. 
+lm(outcome ~ p1 * p2, data = data)
+
+##4.
+```{r}
+install.packages("tidyverse")
+df_news <- read.csv(file = "news.csv", header=TRUE, sep = ",")
+df_news
+df_news_filtered <- filter(df_news, section%in%c("sport", "news")) %>% select(-id)
+
+```
+
+##5.
+name of design = factorial design
+```{r}
+section_factor <- as.factor(df_news_filtered$section)
+day_factor <- as.factor(df_news_filtered$day)
+
+#day_f <- c("monday", "friday")
+#d_factor <- factor(day_f)
+
+table(section_factor)
+table(day_factor)
+
+#levels(df_news_filtered$day) = only if I have leves
+
+
+WHY IS IT NOT WORKING? 
+#outcome_y <- lm(y ~ day * news, data = df_news)
+#summary(df_news_filtered)
+
+
+#df_news$day <- factor(df_news$day, levels = c(0,1), labels = c("Monday", "Friday"))
+#df_news$section <- factor(df_news$section, levels = c(0,1,2), labels = ("news", "sport","business"))
+https://stackoverflow.com/questions/9251326/convert-data-frame-column-format-from-character-to-factor 
+```
+
+##6.
+```{r}
+#outcome_y <- lm(y ~ section, df_news)
+#outcome_y
+outcome_2 <- lm(y ~ section + day + section:day, data = df_news)
+outcome_2
+# should have used the factored data set ! -> NEED summary(outcome_2)
+```
+INTERPRETATION = so if we actually look below we can see that people watch more news on Friday than on Monday -> busienss is most popular and news are least popular
+are these findings significant? = 
+the main effect is between days -> Monday and Friday amount of sections watched 
+the simple effect is between news, business, and sport
+**IF YOU WANT INSTEAD OF SPORT SEEING NEWS-> CHANGE IT TO THE 0 POSITION -> 0 = NEWS AND 1 = SPORTS => LOOKING IN NEWS -> 0= SPORTS AND 1= NEWS -> LOOKING AT SPORTS**
+
+##7.
+
+
+```{r}
+install.packages("interactions")
+interactions::cat_plot(outcome_2, pred = section, modx = day, plot.points = T)
+```
+
+
+##8.
+```{r}
+install.packages("emmeans")
+comp <- emmeans(outcome_2, ~ section * day)
+comp
+#contrast (jlksj , ''bon'')
+
+
+
+```
+
+#1.1.3 Interaction with continous and categorical predictors
+##1.
+
+```{r}
+df_distraction <- read.csv(file = "distraction.csv", header=TRUE, sep = ",")
+df_distraction
+summary(df_distraction)
+```
+##2.
+```{r}
+install.packages("ggplot2")
+df_distraction_filtered <- filter(df_distraction, group%in%c("urban"))
+df_distraction_filtered
+
+plot(df_distraction_filtered$dist_level, df_distraction_filtered$simple_rt, main = "Relationship", xlab = "simple_rt", ylab = "dist_level")
+#abline(lm(dist_level ~ simple_rt, data = df_distraction_filtered), col= "blue")
+
+GEOM_SMOOTR()???
+```
+INTERPRETATION = from the graph we can see that the higher the distraction level the higher the reaction time -> the relationship seems to be linear -> that is what the graph indicates however if we want to be sure we need to run more tests
+
+##3.
+```{r}
+model_one <- lm(simple_rt ~ dist_level+group, data = df_distraction)
+model_one
+summary(model_one)
+```
+INTERPRETATION = 
+
+##4.
+```{r}
+#reaction_centered <- scale(df_distraction$simple_rt)
+distraction_centered <- scale(df_distraction$dist_level)
+model_two <- lm(simple_rt ~ distraction_centered * group, data = df_distraction)
+summary(model_two)
+```
+INTERPRETATION =  
+
+##5.
+```{r}
+interactions::cat_plot(model_two, pred = distraction_centered, modx = group, plot.points = T )
+interactions::interact_plot(model_two, pred = distraction_centered, modx = group, plot.points = TRUE)
+
+```
+INTERPRETATION = 
+
+#1.1.4 AN(C)OVA environments
+IN THE PREVIOUS EXAM
+
+##1.
+
+```{r}
+df_brew <- read.csv(file = "brew.csv", header=TRUE, sep = ",")
+new_df_brew <- df_brew[-c(1),]
+new_df_brew
+
+#new_df_brew$taste <- as.numeric(as.character(new_df_brew$taste))
+class(new_df_brew$taste)
+
+df_brew_filtered <- filter(df_brew, attention%in%c("1"))
+
+sapply(new_df_brew, class)
+
+summary(df_brew_filtered)
+#ggplot(brew, aes(x=brew, y=taste)) + geom_point(shape = 18, colour = "blue") + geom_smooth(method=lm, se = FALSE)
+
+#YOU HAD TO MAKE A GRAPH AFTER BEFORE REMOVING 1 ROW 
+```
+INTERPRETATION = 
+
+##2.
+independent = sample = between subject 
+independent = brew = within (if the customer taste original and after local brew)
+within => repeated measure => if the customer would try first original and later on local brew = the brew would be repeated measure -> within subject 
+
+##3.
+
+```{r}
+outcome_anova <- lm(taste ~ sample + brew, data = new_df_brew)
+outcome_anova
+
+install.packages("afex")
+outcome_anova_two <- aov_ez("sample", "taste", new_df_brew, between = "sample", within =  c("original", "local"))
+
+comp <- emmeans(outcome_anova_two, ~ sample * brew)
+comp
+
+```
+
+
+##4.
+
+```{r}
+
+afex_plot(outcome_anova_two, "sample", "original", "local")
+```
+https://cran.r-project.org/web/packages/afex/readme/README.html
+
+https://tysonbarrett.com/jekyll/update/2018/03/14/afex_anova/

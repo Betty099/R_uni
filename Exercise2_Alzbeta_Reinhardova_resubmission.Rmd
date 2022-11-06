@@ -1,0 +1,394 @@
+---
+title: "Tutorial 2 - Data Analytics"
+author: "Alzbeta Reinhardova 6180079"
+date: 'Week 3: 19.09.2022 - 23.09.2022'
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float: yes
+    df_print: paged
+---
+
+# EBC426x
+## Topic: Regression Analysis
+
+> "All models are wrong, but some are useful!"
+> 
+>  (aphorism generally attributed to) George Box
+
+[Wikipedia Page](https://en.wikipedia.org/wiki/All_models_are_wrong)
+
+**General information**: 
+This exercise mostly focuses on building up your knowledge with simple and multiple regression using both continuous and categorical predictors. 
+
+The goal of this tutorial is to discuss problems and solutions encountered while solving the preparation material and the exercises, but also any tips and tricks or additional resources on R programming and Regression Analysis. 
+
+Please remember to upload the knitted (pdf or html) markdown document to Canvas on **Thursday 22nd of September 2022 before 15h Maastricht time**. Please name your knitted file: "Ex2DA2223_firstname_lastname". 
+
+
+**Suggested material**:
+
+  * Flora (2018); Chapter 2 and Chapter 3
+
+**Topics Covered**:
+
+  * Simple Regression 
+  * Multiple Regression 
+  * Continuous predictors 
+  * Categorical predictors 
+
+### General questions on linear regression
+
+1. What is a statistical model?
+**”it is a model for the score of case, or individual i on some outcome y, given the individual score on some predictor variable X” (Flora, 2018,p9) -> in other words it is a model that shows how variable X is related to variable Y => either negative or positive regresion -> it attempts to reflect reality in simple way**
+
+
+2. Why and when are models useful?
+**model is useful for statistical research or diagnostics of variables relationship it can shows us the distribution of the data and help us find the mean value and portray relationship between X and Y**
+8*The model is useful when we have two variables that are both either continous, ordinal, discret, numberic, **
+**The model can explain to certain extend and predict the relationship between two variables (Alchemer, 2021)**
+
+
+
+3. What assumption are required to hold for your model (e.g., a linear regression) to provide efficient parameters?
+
+
+**1. linear relationship**
+**2. multivariate normality**
+**3. no or little multicollinearity** 
+**4. no auto correlation**
+**5. homoscedasticity **
+
+**=> what to do if assumption is breaking some of these**
+**-> There are tests that are used to test these assumptions **
+
+*(statistical solutions, n.d.)*
+
+4. A study on the relationship between number of beers consumed (X) and blood alcohol content (y) resulted in the following equation:
+
+$$\hat{y} = -0.0127 +0.0180 X$$
+What is the increase of blood alcohol with each beer consumed?
+
+**-> beer and the number of beers increses blood alcohol => 0.0127 increase with every beer **
+
+
+
+5. Consider a linear regression where both dependent and independent variables are in natural logarithms. How do you interpret the estimated regression coefficients in this regression?
+
+**-> we can interpret coefficient as the change in percent in the dependent variable when the independent variable is increased by one percent. Here it is one percent and not one unit (unlinke the previous point) because both the dependent and independent variable are LN = natural logaritm base e -> LOG base 10 **
+**-> B1 is the elasticity of Y with respect to X**
+
+6. What test would you use to test for the significance of joint regression coefficients in a multiple regression model with more than two explanatory variables?
+
+**F-static** 
+
+7. What kind of problem can you encounter if you exclude a relevant variable from a multiple linear regression model?
+
+**-> leads to inconsistent and biased estimates of coefficient which further leads to unreliability of the research and results -> ommited variable bias**
+
+8. What is multicollinearity?
+**-> when multiple independent variables are highly correlated (in one model) -> causing less reliable results** (Hayes, 2022)
+
+### Setup your work
+
+Like we did last week, here is a reminder of the steps you should take when setting up your work. After this tutorial, we assume you are proficient in setting up your work.
+
+1. Make sure that you create a main folder (you can name the folder something like "exercise_2_DA" or whatever you like), consisting of directories _code_, _data_ and _results_. Place this markdown file in directory _code_. 
+2. Set working directory as your main folder (under _Session_ -> _Set Working Directory_). 
+3. Change the author of this file to your own name and student number.
+4. Knit this file into html.
+
+
+
+
+
+
+### Optional: Download stock prices
+
+This step is not necessary, since you can use the provided file _Financial_data_21-1.xlsx_ and jump directly to the next question.
+
+To download stock prices, you can use packages "tidyquant" or "quantmod". When you install "tidyquant" library "quantmod" will also be installed. Nonetheless, there was a bug in a previous version of "quantmod" that would return an [error when trying to download the data](https://stackoverflow.com/questions/72057342/error-in-new-session-could-not-establish-session-after-5-attempts) and you may need to install "quantmod" separately, after installing "tidyquant".
+
+Both libraries use [Yahoo! Finance](https://finance.yahoo.com/) data. Thus, you need to search for the ticker name of each stock. You can either do this in the [Yahoo! Finance](https://finance.yahoo.com/) website or use Google to search for "ticker name <stock> yahoo finance", where <stock> should be changed by the stock you are interested in (e.g. ticker name Eurostoxx600 yahoo finance will return ^STOXX).
+
+[This blog post](https://www.codingfinance.com/post/2018-03-27-download-price/) provides more information on how to use both libraries. 
+
+1. Download stock price information for one (or more stocks) and also for Eurostoxx600. It is recommended to use the package "tidyquant", using the function `tq_get`. For each stock, you will get several columns with different information about the stocks. Additionally, you can plot the closing prices for the stock(s) you selected.
+
+```{r}
+install.packages("tidyquant")
+install.packages("tidyverse")
+stock <- tq_get("AAPL", from = "2022-01-01", to = "2022-01-03" , get = "stock.prices")
+
+install.packages("broom")
+install.packages("ggplot2")
+installed.packages("magrittr")
+stock
+
+
+
+start <- as.Date("2022-09-21")
+end <- as.Date("2022-09-22")
+getSymbols(c("AAPL", "GOOGL", "Eurostoxx600"), src = "yahoo", from = start, to = end)
+
+
+```
+**https://medium.com/analytics-vidhya/plot-stock-prices-with-r-6bdbaebc8ec1** 
+
+2. Calculate the daily returns (as a percentage) using the close prices. The calculation to obtain these returns is:
+
+$$\mbox{return}_t = \frac{\mbox{close}_t-\mbox{close}_{t-1}}{\mbox{close}_{t-1}} \times 100$$
+A simple way to do this in R, without any additional libraries, is to use the `diff` function to get lagged differences of close (i.e. $\mbox{close}_t-\mbox{close}_{t-1}$) and then divide it by close ignoring the first row and replacing by NA. Remember to multiply the values you obtain by 100 to convert them to percentage returns.
+
+Other possibilities to calculate daily returns using libraries can be found in [this blog post](https://www.codingfinance.com/post/2018-04-03-calc-returns/)
+
+3. Plot the daily returns.
+
+
+
+
+
+
+
+
+## Estimate beta as a risk measure 
+
+How useful is your estimate of beta as a risk measure for a well-known global company? You will use basic regression to empirically estimate the beta co-efficient for a global company using historical stock price data. For this exercise you can either use the curated data _Financial_data_21-1.xlsx_ or the data you downloaded in the previous step. 
+
+1.  Load the datasets contained in the file _Financial_data_21-1.xlsx_. In this file you will find the stock market prices and returns (in separate excel sheets _Prices_ or _Returns_ respectively) of 10 well-known companies. You can read this Excel file using function `read_excel()` that is part of the "readxl" package. Make sure to specify the correct sheet and use the relative path for the data. To help you out, loading data from say the "prices" sheet would be: `prices  <- read_excel("your path", sheet = "Prices", col_names = TRUE)`
+
+```{r}
+library("readxl")
+
+df_prices <- readxl::read_excel("Financial_data_21-1.xlsx", sheet = "Prices", col_names = TRUE)
+df_prices
+
+str(df_prices)
+df_prices$Dates <- as.Date(df_prices$Dates,"%m/%d/%Y")
+#CHANGE DATE TO CHARACTER
+
+df_returns <- readxl::read_excel("Financial_data_21-1.xlsx", sheet = "Returns", col_names = TRUE)
+```
+
+
+2. Produce a short report which includes descriptive statistics on one of the companies (average daily stock price, and the volatility of the stock returns) and compare the stock price performance to the stock market index stock600. Make sure that your report includes graphs which plot the stock market price data alongside the chosen company for comparison i.e. a line graph of the historical stock price data and a scatter plot of the market return data.
+
+```{r}
+lvmh_mean_prices <- mean(df_prices$LVMH)
+lvmh_mean_prices
+summary(df_prices)
+#lvmh_mean_prices_daily <- sqrt(252)*lvmh_mean_prices
+#lvmh_mean_prices_daily
+```
+**I find the mean value of LVMH stock price**
+** I alsso run summary to have an overview of each stock price showing me min and max plus mean value of each stock** 
+
+```{r}
+install.packages("tidyverse")
+install.packages("ggplot2")
+install.packages("tidyquant")
+#ggplot(df_prices, aes(df_prices$Dates)) 
+#+ geom_line(aes(y=df_prices$EuroStoxx600))
+
+
+stock600 <- tq_get('^STOXX', from = "2017-01-01", to = "2018-03-01", get = "stock.prices")
+
+ggplot(data=stock600,aes(x=date, y=close)) +
+ geom_line() +
+  theme_classic() +
+  labs(x = 'Date',
+       y = "Close Price",
+       title = "Stock 600 price")
+
+stock600$returns <- c(NA, -diff(stock600$close)/stock600$close[-1] *  100)
+
+ggplot(data = stock600,aes(x = date, y = returns)) +
+  geom_line() +
+  theme_classic() +
+  labs(x = 'Date',
+       y = "Daily returns",
+       title = "Stock 600 price")
+```
+**I cannot still receive the results even after your fix of the code -> I get this error: **
+**Error in loadNamespace(i, c(lib.loc, .libPaths()), versionCheck = vI[[i]]) : **
+**namespace ‘rlang’ 1.0.2 is already loaded, but >= 1.0.3 is required** 
+
+3. Describe how the chosen company has performed relative to the stock market and put this into context by considering the current economic and political environment. Estimate a simple intercept model for the expected return of a company $Y_t$(see Flora), which can be expressed as
+$$Y_t = \beta_0 + \varepsilon_t$$
+where $\beta_0$ is the intercept and $\varepsilon_t$ is the error term. Use the function `lm()`, part of R base stats, using formula notation, as discussed in the previous tutorial. Interpret the results you obtained in R.
+
+
+```{r}
+regression_lvmh <- lm(LVMH ~ 1, df_returns)
+summary(regression_lvmh)
+
+```
+**-> the incept reveals that lvmh is not moving diretly with the market stock price**
+
+
+
+https://www.learnbymarketing.com/tutorials/explaining-the-lm-summary-in-r/
+
+
+https://www.datacamp.com/tutorial/linear-regression-R
+
+
+4. Plot the residuals from the intercept model and check if they satisfy the necessary assumptions.
+```{r}
+residual <- regression_lvmh$residuals
+  
+plot_result <- plot(residual)
+
+```
+
+**-> plot shows that data meets the assumption mentioned above**
+
+5. Another model is that the expected company return is a function of the market return. Estimate in R this model (see Flora) which takes the form
+$$Y_t = \beta_0 + \beta_1 X_t + \varepsilon_t$$
+where $\beta_1$ is the slope term and $X_t$ is the market return. Interpret the results you obtained in R. How do these estimates compare to those for beta found on Yahoo Finance?
+
+```{r}
+regression_stock_comparison <- lm(LVMH ~ EuroStoxx600, df_returns)
+summary(regression_stock_comparison)
+
+```
+
+
+6. Plot the residuals from the previous model and check if they satisfy the necessary assumptions.
+
+```{r}
+residual_comparison <- regression_stock_comparison$residuals
+  
+plot_result_comparison <- plot(residual_comparison)
+```
+**they seem to satisfy the assumptions -> it seems they are less spread but in general the plot seems normal and indicates that assumptions were met** 
+
+### Multiple regression with continous and categorical predictors 
+
+The [dataset](https://www.kaggle.com/datasets/nehalbirla/vehicle-dataset-from-cardekho) _vehicle_data.csv_ includes information about vehicles and motorcycles listed on the website CarDekho.com. The dataset includes various information on the vehicles including the model, year, selling price, showroom price, kilometers driven, fuel type, seller type, transmission and number of previous owners. The purpose is to predict the present price of a vehicle based on several of these covariates.
+
+
+1. We expect that the current price of the vehicles is affected by the (initial) selling price. To see whether such a relationship exists, plot a scatterplot of variables "Selling_Price" and "Current_Price". Do you think there is a relationship between these two variables? Does the relationship look linear?
+
+```{r}
+df_vehicles <- read.csv("vehicle_data.csv")
+df_vehicles
+```
+
+
+```{r}
+names(df_vehicles)
+#shows us all columns available in the data set
+```
+```{r}
+plot(df_vehicles$Selling_Price, df_vehicles$Present_Price, main = "Relationship", xlab = "Selling_price", ylab = "Current_price")
+abline(lm(Present_Price ~ Selling_Price, data = df_vehicles), col= "blue")
+```
+**plot is not as clear as we hoped it to be -> however plot only serves as an indication we cannot take it literally** 
+**it shows signs of normality but if we want to be sure we have to run tests**
+
+
+
+2. Estimate a linear regression model for the effect of selling price and year on the present price of the vehicle. Interpret the obtained effect of selling price. Is it possible to obtain a negative current price prediction with this linear regression?
+
+Transform the two price series, "Selling_Price" and "Current_Price", to logarithms. For the rest of the question work with these transformed series.
+
+
+```{r}
+regression_effect <- lm(Present_Price ~ Selling_Price + Year, data = df_vehicles)
+summary(regression_effect)
+```
+**-> first one is the one I am chekcing effect on **
+**IT IS POSITIVE RELATIONSHIP = INTERCEPT IS POSITIVE FIRST = 1626.74**
+
+```{r}
+# now I am going to transfor prices into log
+logar_Selling_price <- log(df_vehicles$Selling_Price)
+logar_Present_price <- log(df_vehicles$Present_Price)
+
+```
+
+
+3. Make a scatterplot of the log variables "Selling_Price" and "Current_Price". Do you think there is a relationship between these two variables? Does the relationship look linear? Compare your result to question 1.
+
+```{r}
+plot(logar_Selling_price, logar_Present_price, main = "Relationship_logarithm", xlab = "Log_Selling_price", ylab = "Log_Current_price")
+abline(lm(logar_Present_price ~ logar_Selling_price), col= "red")
+```
+**plot loooks better in log and we can assume that assumptions have been met** 
+**current price is affected by the selling price = X on current and Y on selling prices**
+
+4. Estimate a linear regression for the effect of log selling price and year of vehicle on the log present price. Comment on the coefficient estimates' significances, signs and the overall goodness of fit of this model. Is it possible to obtain a negative current price prediction with this linear regression?
+
+```{r}
+regression_effect_log <- lm(logar_Present_price ~ logar_Selling_price + df_vehicles$Year)
+summary(regression_effect_log)
+#plot(regression_effect_log)
+```
+**results we get from the regression summary are significance revealing that selling price has a significant positive effect on present price and years have negative significant effect on the present price of vehicles** 
+
+5. The dataset also contains information on kms driven, fuel type ("Petrol", "Diesel", "CNG") and seller type ("Dealer", "Individual"). The current price of a vehicle can depend on these additional variables together with the selling price and year of the vehicle. Add these variables to the model in question 4. Comment on the estimation output and compare the results to those in question 4. Particularly, did the effect of the selling price change when these additional variables are added in the model?
+
+```{r}
+ml_effect <- lm(Present_Price ~ Selling_Price + Year +Kms_Driven + Fuel_Type + Seller_Type, data = df_vehicles)
+summary(ml_effect)
+
+```
+**we can see that not every value has an effect on present price. Only year, kms driven and selling price has an effect on present price. suprisinglly kms driven has positive significant effect on present price** 
+
+
+6. Estimate a linear regression model for effect of seller type on present price. Without changing any variables explain what the value of the intercept represents in this case. Interpret the overall findings. 
+
+```{r}
+seller_effect <- lm(Present_Price ~ Seller_Type, data = df_vehicles)
+summary(seller_effect)
+```
+**seller type individual has a negative significiant impact on present price ** 
+
+
+
+7. Check the assumptions of the model you created in question 6 above. 
+
+**does not influence much** 
+
+
+8. Estimate a linear regression model the effect of fuel type on present price. Convert the fuel type variable to factor and interpret the findings. What are the estimates of Fuel_TypeDiesel and Fuel_TypePetrol compared to? 
+
+```{r}
+fuel_factor <- as.factor(df_vehicles$Fuel_Type)
+fuel_effect <- lm(Present_Price ~ fuel_factor, data = df_vehicles)
+summary(fuel_effect)
+```
+**there are no significant results **
+
+
+9. Using the same model you estimated in question 8 above, you now want to apply a planned contrast approach. You have specified hypotheses beforehand and predict that Petrol cars will have a lower price than both Diesel and CNG cars. You are also interested in whether there is a difference between Diesel and CNG cars. Estimate the model and interpret the findings. 
+```{r}
+install.packages("lsmeans")
+contrast(df_vehicles$Fuel_Type, df_vehicles$Present_Price)
+
+##aov_one <- aov(df_vehicles$Fuel_Type ~ df_vehicles$Present_Price)
+##summary.lm(aov_one)
+
+levels(df_vehicles$Fuel_Type)
+c1 <- c(-0.5,-0.5,1)
+c2 <- c(-1,1,0)
+
+contrasts(df_vehicles$Fuel_Type) <- cind(1,c2)
+head(df_vehicles$Fuel_Type)
+
+```
+
+**?**
+
+
+Bibliography
+
+Alchemer. (2021). What is Regression Analysis and Why should I use it. https://www.alchemer.com/resources/blog/regression-analysis/#:~:text=Regression%20analysis%20is%20a%20reliable,these%20factors%20influence%20each%20other.
+
+
+Heyes, A. (2022). Multiollinearity. https://www.investopedia.com/terms/m/multicollinearity.asp#:~:text=Causes%20of%20Multicollinearity,provide%20similar%20and%20repetitive%20results.
+
+Statistical Solutions. (n.d.). Assumptions of Linear Regression. https://www.statisticssolutions.com/free-resources/directory-of-statistical-analyses/assumptions-of-linear-regression/
+

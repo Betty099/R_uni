@@ -1,0 +1,189 @@
+---
+title: "Tutorial 5 - Data Analytics"
+author: "Alzbeta_Reinhardova_6180079"
+date: 'Week 6: 10.10.2022 - 14.10.2022'
+output:
+  pdf_document:
+    toc: yes
+    number_sections: yes
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float: yes
+    df_print: paged
+---
+# EBC426x
+## Topic: Panel data models
+
+**General information**: 
+
+This exercise focus on building knowledge on the application of panel data models, when you should use it and how to interpret the results. Continuing our analysis on the effects of wages on employment, in this tutorial we will analyze a real world data on the effects of wages on employment. The dataset was first published 
+[Arellano M, Bond S (1991). “Some Tests of Specification for Panel Data : Monte Carlo Evidence and an Application to Employment Equations.” Review of Economic Studies, 58, 277–297](https://www.jstor.org/stable/2297968)
+
+The goal of this tutorial is to discuss problems and solutions encountered while solving the preparation material and the exercises, but also any tips and tricks or additional resources on R programming and Regression Analysis. 
+
+Please remember to upload the knitted (pdf or html) markdown document to Canvas on **Thursday 13th of October 2022 before 15h Maastricht time**. Please name your knitted file: "Ex2DA2223_firstname_lastname". 
+
+
+**Suggested material**:
+
+  * Pedace, R. (2015). Econometrics for Dummies, Chapter 17.
+  * Kennedy, P. (2008). A guide to econometrics, Chapter 18.
+
+**Topics Covered**:
+
+  * Pooled OLS
+  * Random Effects 
+  * Fixed Effects
+
+### General questions on panel data models
+
+1. State the main differences between panel datasets and cross sectional data.
+
+**panel dataset = number of variables and multiple periods of time -> allows to control for variables we cannot observe or measure like cultural factors, differences cross companies, change over time but NOT across entities**
+
+**cross-sectional dataset = many observations at the same point of time** (Researchgate, 2015; Statista, n.d.; Torres-Reyna, 2007)
+
+ADDITIONAL SOLUTION 
+**eve if observations are not collected at the same time point, cross sectional data assumes that the difference in the time of data colletion does not change the data generation process** 
+
+
+2. Explain how a fixed effects panel data model corresponds to a linear regression with dummy variables.
+
+**fixed effects = only in case I am interested in analysing the impact of variables that vary over time = explores the relationship between predictor and outcome variables within an entity (just like linear model with dummy variables) -> e.g. male or female could influence the opinion toward certain issue => in linear model wih dummy variables male = 1 and femal = 0**
+(Torres-Reyna, 2007)
+**when we use fixed effect we assume that something withint the individual may impact or bias the predictor or outcome variables and therefore we control it** (Torres-Reyna, 2007)
+
+**assumption = time-invariant characteristics are unique to individual and should not be correlated with other individual characteristics** (Torres-Reyna, 2007)
+
+SOLUTION
+**in fixed effects models, each individual has an individual-specific intercept -> this is equivalent to inclyding a dummy variable fo each individual** 
+
+3. Explain the difference between a fixed effects model and a random effects model. What is the differentiating assumption between these models?
+
+**in comparison with the fixed effects model -> the variation across entities is assumed to be random and uncorrelated with the predictor or independent variables included in the model**
+(Torres-Reyna, 2007)
+**if we believe that difference across entities have some influence on dependent variable we should use random effects** 
+
+**In case of randome model in comparison with fixed one we can include time invariant variables (gender) -> they are absorbed by intercept in fixed effects** (Torres-Reyna, 2007)
+
+**random model assume that the entity's error term is not correlated with the predictors which allows for time-invarinat variables to play a role as explanatory variables** (Torres-Reyna, 2007)
+
+SOLUTION 
+**fixed and random effects models have in common that we allow for individual-specific intercepts. However, a crucial differnce is that random effects models are based on the assumption that the intercepts are structurally unrelated(uncorrelated) with the observed regressor. In fixed effects models, the intercepts (which control for unobserved time-invariant variables) are allowed to be arbitrarily correlated with the observed regressors**
+
+
+4. Assume that the random effects hypothesis holds. Do you prefer the random or the fixed effects estimator? Give reasons why.
+
+**to decide between random and fixed -> we can check by using Hausman test = H0 is the preferred model is randome vs the H1 the fexed effects -> Hausman tests whethere the unique errors are correlated with the regressors -> in case of H0 they are not correlated** (Torres-Reyna, 2007)
+
+**I think this question is not clear to me??? what is meant by this question???**
+
+SOLUTION 
+**under the random hypothesis the unobserved effects are uncorrelated with the observed regressors. Therefore, removing them from the model is unnecessary and also inefficient! We prefer the random effects estimator becasue it is the more efficient estimator** 
+
+
+### Effects of minimum wage on employment
+
+In this tutorial, you will analyze employment and wage data from the UK that is collected from several firms across different sectors and over time. Economic theory suggests that an increase in wages decreases employment since employment becomes more costly for companies. This effect, however, is likely to change across sectors. 
+
+The dataset is based on Arellano M, Bond S (1991) and it is provided as "EmplUK" in R package "plm". 
+[Arellano M, Bond S (1991). “Some Tests of Specification for Panel Data : Monte Carlo Evidence and an Application to Employment Equations.” Review of Economic Studies, 58, 277–297](https://www.jstor.org/stable/2297968)
+
+The variables in the dataset are
+
+  * "firm" firm index
+  * "year" year of data collection
+  * "sector" the sector of activity
+  * "emp" employment level in the firm
+  * "wage" average wages in the firm
+  * "capital" total capital of the firm
+  * "output" output of the firm.
+
+1. What is the panel data dimensions in this study?
+
+**firm (is index) = cross-sectional dimension -> do not differ over time**
+**year = time dimension or panel lenght**
+
+2. Load library "plm" for panel data analysis and libraries "gplots" and "car" to use plotting functions that are more appropriate for visualizing panel data. From the package "plm", load the "EmplUK" dataset using `data("EmplUK")`. Convert the dataset to a panel dataframe using function `pdata.frame`, where you need to indicate the panel data dimensions names.
+
+```{r}
+library('plm')
+library('gplots')  # for plots
+library('car')  # for panel scatterplot
+
+data("EmplUK")
+panel_df_em <- pdata.frame(EmplUK, index= c("firm", "year"))
+head(panel_df_em)
+```
+
+
+3. We want to check whether the employment data is different across sectors. Start by plotting the average employment across sectors using function `plotmeans`. Visually, are there substantial differences in average employment across sectors? Please note that this is an unbalaced panel data, thus you will get warnings when using the suggested function. For the purpose of the tutorial you can safely disregard them.
+
+```{r}
+plotmeans(emp ~ sector, data = EmplUK)
+```
+**INTERPRET = sector 5,6,7 have relatively higher employment on average in comparison with other sectors*
+
+
+4. Estimate a pooled OLS model that explains employment with wages in a linear regression. Do the estimated coefficients confirm economic theory on wages and employment (as indicated in the introduction)?
+
+```{r}
+pooled_model <- plm(emp ~ wage, data = EmplUK, model = "pooling")
+summary(pooled_model)
+```
+**INTERPRET = the wage has significant negative effect on employment -> the higher the wages the less of employment -> so the less the wage the more employment -> it supports the theory**
+
+***pooling fix data with other but does not take into account time***
+
+5. It is expected that the average wages are different across firms in the dataset. To account for these differences, estimate the model in question 4 with an additional dummy variable for firms. Comment on the effect of wages on employment.
+
+```{r}
+pooled_model_two <- plm(emp ~ wage + factor(firm), data = EmplUK, model = "pooling")
+summary(pooled_model_two)
+
+```
+**INTERPRET = it became more significant -> when we add dummy variable the effect of wages on employment decreases by half but stays negative and significant -> getting dummy variable and adding it makes the results more precise as now we are considering effect of one firm without considering the others**
+
+6. Each firm in the dataset is associated with one of the 9 sectors. It is possible that the average wages between firms are different due to the sector differences. To account for these differences, estimate the model in question 5 with dummy variables for sectors instead of dummy variables for firms. Comment on the obtained results.
+
+```{r}
+pooled_model_three <- plm(emp ~ wage + factor(sector), data = EmplUK, model = "pooling")
+summary(pooled_model_three)
+```
+**INTERPRET = the result is positive and not significant which we can interpret as the sector??? ** 
+
+7. Estimate a fixed effects model explaining employment with wages using function `plm`. Print the summary of the estimated model and estimated fixed effects using function `fixef`. Is the effect of wage on employment in line with economic theory (as indicated in the introduction)?
+
+```{r}
+pooled_model_four <- plm(emp ~ wage, data = EmplUK, model = "within")
+summary(fixef(pooled_model_four))
+
+
+
+```
+**INTERPRET = it is in line with the economic theory that increase in wages decrease employment -> the results are significant ** 
+
+8. Estimate a random effects model explaining employment with wages. Comment on the estimates of this model.
+
+```{r}
+pooled_model_five <- plm(emp ~ wage, data = EmplUK, model = "random")
+summary(pooled_model_five)
+
+
+
+```
+**INTERPRET = INTERPRET = it is in line with the economic theory that increase in wages decrease employment -> the results are significant**
+
+
+
+
+
+Bibliography 
+
+https://www.researchgate.net/post/What-is-difference-between-cross-sectional-data-and-panel-data#:~:text=Cross%2DSectional%20data%20comprises%20many,and%20of%20multiple%20time%20periods.
+
+https://www.statista.com/statistics-glossary/definition/357/coss_sectional_data/
+
+https://www.princeton.edu/~otorres/Panel101.pdf
+

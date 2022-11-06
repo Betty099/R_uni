@@ -1,0 +1,295 @@
+---
+title: "Exercise 1 - Data Analytics"
+author: "Alzbeta_Reinhardova_6180079"
+date: 'Week 2: 12.09.2022 - 16.09.2022'
+output:
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float: yes
+    df_print: paged
+---
+
+# EBC426x
+## Topic: Introduction to R
+
+**General information**: 
+This exercise focuses on building up your knowledge and familiarity with R and RStudio. 
+
+The goal of this tutorial is to discuss problems and solutions encountered while solving the exercises, but also any tips and tricks or additional resources on R programming. 
+
+Please remember to upload the knitted (html or pdf) markdown document with your solutions to Canvas on **Thursday 15th of September 2022 before 15h Maastricht time**. Please name your knitted file: "Ex1DA2223_firstname_lastname_studentnumber". 
+
+**Suggested material**:
+
+  * Gohmert, Li, & Wise. (2020). Easy R 
+  * [Free introductory course to R](https://www.datacamp.com/courses/free-introduction-to-r)
+  * [R reference card](http://cran.r-project.org/doc/contrib/Short-refcard.pdf)
+  * [R manuals](http://cran.r-project.org/manuals.html)
+  * Ohri, A. (2012). R for business analytics. Springer Science & Business Media.
+
+**Topics Covered**:
+
+  * Using and Knitting R markdown files.
+  * Installing and using packages.
+  * Using help and searching for R commands.
+  * Basic commands in R.
+  * Statistical testing with R.
+  * Loading, summarizing and filtering data with R.
+  * Creating graphics of data in R.
+  
+### Check that your R installation works correctly.
+
+1. Make sure that you create a main folder (you can name the folder something like "exercise_1_DA" or whatever you like), consisting of directories _code_, _data_ and _results_. Place this markdown file in directory _code_. Place data files _ahicesd.csv_ and _babynames.csv_ in directory data. 
+2. Set working directory as your main folder (under _Session_ -> _Set Working Directory_). 
+3. Change the author of this file to your own name and student number.
+
+4. Knit this file into html.
+5. Consult the [R Markdown cheatsheet](https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet) in case you want to make further changes.
+
+### Installing and loading packages
+
+Packages can be installed using `install.packages("package_name")` and loaded using `library(package_name)`. Note the mandatory use of "" when installing the package.
+
+Include an R code block to answer each question, when appropriate. Question 1 already has a block created for you.
+
+1. Install and load package "tidyverse".
+
+```{r}
+install.packages("tidyverse")
+
+```
+
+2. Explain the reason to not include (or comment) the installation of packages in your analysis scripts?
+
+```{r}
+#according to van Moorsel (2022) "installation of packages in #the analysis scripts will crash the knitting protocol and #therefore will not create a HTML
+#-> people work around it using different formyulas for #instance by  install.packages("ggplot2", repos = 'http://cran.us.r-project.org') (Kyle, 2015)  
+```
+
+3. Research what are R namespace conflict and how to deal with them. Explain. 
+
+```{r}
+#-> namespace = when two functions have the same name function #-> it is causing problems especially in terms of finding bugs #-. can be resolved by some solutions => one of them being #"conflicted" package that highlights the functions and namespaces that may cause issues (Alex, 2022)
+```
+
+
+### R basic commands.
+
+R uses functions to perform operations. To run a function called "funcname", we type "funcname(input1, input2)", where the inputs "input1" and "input2" tell R how to run the function. For example, to create a vector of numbers, we use the function
+"c()", and any numbers used in the parenthesis will be concatenated together. We can store values in a variable by using the operator "<-". You can get help for each function by preceding the function name by "?" (this is commonly done in the console so it shows in the help pane).
+
+1. Create a vector of numbers 2, 3, 5, 8 and store this vector in the variable "v".
+```{r}
+v <- c( 2,3,5,8)
+v
+```
+
+2. Check the help for the square root function "sqrt()".
+```{r}
+sqrt(v)
+
+```
+
+3. Calculate the square root of "v" and store the result in variable "sqrt_v".
+
+```{r}
+sqrt_v <- sqrt(v)
+sqrt_v
+```
+
+4. Check the help for function "rnorm()" and explain what will be the result of using "6, 45, 10" as inputs for this function i.e. `rnorm(6, 45, 10)`.
+
+
+```{r}
+rnorm(6,45,10)
+```
+
+
+Whenever using calculations involving random quantities, you should use "set.seed()", since this function allows to set the seed and have results that will reproduce the same output.
+
+5. Set the seed to your favorite number, and calculate the mean and variance for "rnorm(1000)".
+```{r}
+favourite_number <- set.seed(9)
+rnorm(1000)
+```
+
+
+### Statistical testing with R.
+
+1. Create a variable "a" that has all the numbers from 1 to 100 (without typing out all the numbers). 
+```{r}
+a <- (1:100) 
+a
+```
+
+2. Create a variable "b" with numbers: 145, 19, 5, 87, and 32.
+```{r}
+b <- c( 145,19,5,87,32)
+b
+```
+
+3. Research and do a statistical test for the means of two groups in R.
+```{r}
+install.packages("ggpubr")
+#-> mean a is smaller than mean b
+t.test(a, b, alternative = "two.sided", var.equal = FALSE)
+
+```
+
+4. Use R to test whether the average of "a" is larger than the average of "b". 
+
+```{r}
+mean(a)
+mean(b)
+```
+
+
+### Loading and working with data. 
+
+For most analyses, the first steps involve loading a data set into R. Make sure that you are working on the correct directory, as described in section "Check that your R installation works correctly".
+
+1. Load the dataset contained in the file _ahicesd.csv_ into an object called "ahicesd", using function `read_csv()` that is part of the "tidyverse" package. Make sure you use the relative path for the data as explained in the first question. Do not forget to use the file extension, i.e. _.csv_.
+```{r}
+setwd("C:/Users/Betty Reinhardova/Desktop/University/Masters/Data analytics/Exercise_1")
+
+ahicesd <- read.csv(file = "ahicesd.csv", header=TRUE, sep = ",")
+ahicesd
+```
+
+2. Show at least one other way of loading the same dataset into R. 
+```{r}
+
+
+#WAY 2 TO READ DATASET
+#library(readr)
+#data2 <- read_csv("C:/Users/Betty #Reinhardova/Desktop/University/Masters/Data #analytics/Exercise_1/Exercise_1_data/_data_/ahicesd.csv")
+
+#WAY 3 TO READ DATASET
+#library(data.table)
+#data3 <- freed("C:/Users/Betty #Reinhardova/Desktop/University/Masters/Data #analytics/Exercise_1/Exercise_1_data/_data_/ahicesd.csv")
+
+#--> these two solutions are suppose to be faster than read.csv function (Finnstats, 2021)
+```
+
+3. Use the function `dim()` to check the number of observations and number of variables of this dataset. Note that `dim()` works on variables, not files.
+```{r}
+dim(ahicesd)
+```
+
+4. Use the function `names()` to check the variable names in this dataset.
+```{r}
+names(ahicesd)
+```
+
+5. Create a new variable call "new" that is a product of the variables "ahi01" and "ahi02" (contained in "ahicesd").
+```{r}
+new <- ahicesd$ahi01*ahicesd$ahi02
+new
+```
+
+
+### Filtering data
+
+1. Import the dataset contained in _babynames.csv_ into object _babynames_. The dataset contains names and sex for babies born in the U.S. per year. 
+```{r}
+babynames_df <- read.csv(file = "babynames.csv", header=TRUE, sep = ",")
+babynames_df
+```
+
+2. Filter out data, into a new object, to only include year 2000 and above
+```{r}
+babynames_df_two <- babynames_df%>%filter(babynames_df$year>=2000)
+babynames_df_two
+
+```
+
+3. Filter out data, into a new object, to only include four baby names you want to focus on. You can choose any names.
+```{r}
+babynames_df_two %>% filter(babynames_df_two$name == 'Julia' | babynames_df_two$name == 'Alexis' | babynames_df_two$name == 'Elizabeth' | babynames_df_two$name == 'Samantha')
+```
+
+4. Choose one name of the four and tell us how many people in total were born with that name. 
+
+```{r}
+sum(babynames_df_two$name == "Elizabeth")
+```
+
+
+### Extra: Graphical and numerical summaries of data. 
+
+We will load the [mtcars](https://www.rdocumentation.org/packages/datasets/versions/3.6.2/topics/mtcars) dataset, that is part of R, from the 1974 Motor Trend US magazine. The dataset comprises fuel consumption and 10 aspects of automobile design and performance for 32 automobiles (1973--74 models). This dataset is already part of R so to load it you run:
+```{r, echo=TRUE, results=FALSE}
+mpg_data <- mtcars
+```
+
+1. Use the function "summary()" to provide a numerical summary of each variable in the dataset.
+```{r}
+summary(mpg_data)
+```
+
+
+As you can observe, the cylinders variable ("cyl"), gears ("gear"), engine ("vs") and transmission ("am") are stored as a numeric vector, so R has treated it as quantitative. Since there are only a small number of possible values for each one of these variables, one may prefer to treat it as a categorical variable. 
+
+2. Use the function `as.factor()` to convert these variable to categorical and again check the summary of this dataset. Note that you need to use the operator "$" to assess these variables and re-assign them to the dataset.
+```{r}
+mpg_data$cyl<-as.factor(mpg_data$cyl)
+
+mpg_data$gear<-as.factor(mpg_data$gear)
+
+mpg_data$vs<-as.factor(mpg_data$vs)
+
+mpg_data$am<-as.factor(mpg_data$am)
+
+summary(mpg_data)
+```
+
+
+3. Use the `plot()` function to produce scatterplots of the quantitative variables, "hp" and "mpg". Note that you need to use the operator "$" to assess these variables.
+```{r}
+plot(mpg_data$hp, mpg_data$mpg)
+```
+
+
+4. Use the `hist()` function to create a histogram of the variable "hp".
+
+```{r}
+hist(mpg_data$hp)
+```
+
+
+4a. In the same function, make the histogram blue colored. 
+
+```{r}
+hist(mpg_data$hp, col = blues9)
+```
+
+
+5. Use the `pairs()` function to create a scatterplot for every pair of variables of this dataset.
+```{r}
+pairs(mpg_data)
+```
+
+
+Note that in R, many statistical and analytics functions use the so-called Wilkinson-Rogers formula notation, which makes use of the operators , "~", "." and "-". More information can be found in [basics of formula](https://riptutorial.com/r/example/3414/the-basics-of-formula).
+
+6. Produce a scatterplot of variables "hp, mpg, am" using a formula notation.
+
+```{r}
+df <- data.frame(mpg_data$hp, mpg_data$mpg, mpg_data$am)
+pairs(df)
+```
+
+
+Bibliography 
+
+Alex. (2022). Naming collisions and an introduction to namespaces. https://www.learncpp.com/cpp-tutorial/naming-collisions-and-an-introduction-to-namespaces/
+
+Finnstats. (2021). Import CSV Files into R step-by-step guide. https://www.r-bloggers.com/2021/12/import-csv-files-into-r-step-by-step-guide/
+
+Kyle. (2015, Jun). Error R Studio Knit HTML with install.packages line .Meta Stack Overflow. https://stackoverflow.com/questions/30959839/error-r-studio-knit-html-with-install-packages-line
+
+van Moorsel, J. (2022). Installing and loading packages. RPubs. retrieved on 15.09.2022 from https://rpubs.com/JEMONIC/942204 
+
+
+

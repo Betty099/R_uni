@@ -1,0 +1,202 @@
+---
+title: "Tutorial 4 - Data Analytics"
+author: "Alzbeta Reinhardova"
+date: 'Week 5: 03.10.2022 - 08.10.2022'
+output:
+  pdf_document:
+    toc: yes
+    number_sections: no
+  html_document:
+    theme: flatly
+    toc: yes
+    toc_float: yes
+    df_print: paged
+---
+# EBC426x
+## Topic: Diff-in-Diff
+
+**General information**: 
+This exercise focus on building knowledge on the application of diff-in-diff, when you should use it and how to interpret the results. In this tutorial, you will replicate the study performed in the paper [Card, D., & Krueger, A. B. (1994). Minimum Wages and Employment: A Case Study of the Fast-Food Industry in New Jersey and Pennsylvania. The American Economic Review, 84(4), 772-793.](https://econpapers.repec.org/article/aeaaecrev/v_3a84_3ay_3a1994_3ai_3a4_3ap_3a772-93.htm). You are encouraged to consult the paper. Paper replication is a useful skill for your master thesis.
+
+[David Card is a Nobel prize laureate](https://www.nobelprize.org/prizes/economic-sciences/2021/card/facts/) for his empirical contributions to labour economics.
+
+The goal of this tutorial is to discuss problems and solutions encountered while solving the preparation material and the exercises, but also any tips and tricks or additional resources on R programming and Regression Analysis. 
+
+Please remember to upload the knitted (pdf or html) markdown document to Canvas on **Thursday 7th of October 2022 before 15h Maastricht time**. Please name your knitted file: "Ex2DA2223_firstname_lastname". 
+
+**Suggested material**:
+
+  * Chapter 9 in: Cunningham, Scott. Causal Inference: The Mixtape, New Haven: Yale University Press, 2021. (free on the internet, uses the Card/Krueger study).
+  * Chapter 5 in: Angrist, J. D., & Pischke, J. S. (2014). Mastering Metrics: The Path from Cause to Effect.
+  * Chapter 5 in: Angrist, J. D., & Pischke, J. S. (2009). Mostly harmless econometrics: An empiricist's companion. Princeton university press. (free on the internet, advanced material).
+
+**Topics Covered**:
+
+  * Multivariate regression
+  * Difference-in-Differences
+
+### General questions on Diff-in-diff
+
+1. Provide the definition of a treatment effect.
+
+**causal effect of changing the treatment status while keeping all confounders fixed -> so in simple way it is the effect of treatment on my outcome variable by changing the treatment status**
+
+**a treatment effect is the effect of a interventino, treatment or policy change on the outcome variable independent of the ffects of other explanatory variable**
+
+2. What is the difference between ANOVA and difference in difference (DID) estimation?
+
+**DiD - analyse difference variable and repeated measure model anova analuses raw values and control for group and time -> but the DiD analysis is mathematically identical to the interaction term from the repeated measures anova**
+
+https://stats.stackexchange.com/questions/194888/difference-in-difference-vs-repeated-measures 
+
+
+
+3. Explain how a DID estimation for the effect of a treatment across time and control groups corresponds to a linear regression with dummy variables.
+
+**treatment by definition is a dummy variable, 0 for non-treated and 1 for treated subjects. we can also define a before and after-treatmetn dummy variable to account for changes over tiem. inclusion of both these varialbes and an interaciton of them in a linear regression model leads to the DID estimation**
+
+
+
+4. The government imposes a sudden increase in income tax for individuals earning more than a given brut income. It is expected that the consumption patterns of individuals change with this tax increase. However, this consumption effect depends on two product categories, 'luxury' versus 'necessity' that are purchased by individuals. How can a DID regression be extended to include such interactions?
+
+**group -> income tax increase for earnings (a = pre_tax spending luxury, b= post_increase_tax spending luxury, c = pre_tax spending necessity, d = post_tax spending necessity) -> based on these variables we would attempt to measure differences between these two groups based on the increase tax (treatment)**
+ 
+ **the interaction effect in this case would be the multiplication of the treatment varialbe (dummy for the time of the income tax increase) and dummy variable for one of the product categories** 
+
+5. The tax authorities want to measure of the effect of a soda tax on sugar-added drink consumption. The following linear regression for consumption C was estimated:
+
+$$C = 0.86 + 0.35 \times \mbox{Year} - 0.2 \times \mbox{Category} - 0.01 (\mbox{Category} \times \mbox{Year})$$
+where "Year" is a dummy variable that takes the value of 0 before the tax change and 1 after the tax change, "Category" is a dummy variable that takes the value of 0 for drinks that are not taxed and 1 for those that are taxed. Based on this model, what is the effect of the soda tax on consumption?
+
+**the effect of the soda tax is the coefficient of 'category; x year, which is the effect after the introduction of tha tax (year=1) for the category taht is actually taxed (category =1). So the tax decreased the consumption of taxed goods by 0.01 units.**
+
+
+
+6. We want to assess the effect of an increase in years of compulsory schooling on the earnings of individuals when they are employed based on a dataset collected over years. In this dataset all individuals in the sample have more years of education than the one imposed by compulsory schooling.
+Explain why this dataset is not appropriate to analyze the question.
+
+**everyone had more than the compulsatory schooling years, so there is in essence no treated subject in this dataset. Therefore, we cannot assess the effect of the treatment.**
+
+### Effects of minimum wage on employment
+
+In this tutorial, you will replicate the Card study on the effects of minimum wage on employment, which has some interesting results. By using an appropriate technique (diff-in-diff), the influence of minimum wage on employment could not be found.
+
+Minimum wages are important factors to determine in an economy since they have a direct effect on the purchasing power of employed people. Economic theory for competitive markets predicts a cut in employment, for example measured by the full-time-equivalent (fte) worked for individuals, if there is an increase in wages. 
+
+This exercise analyzes whether the predictions of economic theory holds for a dataset in the US. In 1992 New Jersey raised their minimum wage from \$4.25 an hour to \$5.05 an hour. Pennsylvania did not. Thus the change of minimum wages is considered a 'treatment' variable that was only applied to NJ. David Card and Alan Krueger surveyed fast food restaurants in both states before and after the change in minimum wages to see the effect of this treatment.
+
+You are provided a cleaned dataset in an R data frame, without missing values and including only relevant variables for replicating parts of the results in the paper. 
+The variables are:
+
+  * "co_owned' indicates if the restaurant is co-owned.
+  * "state" indicates the state (1 for NJ, 0 for PA).
+  * "fte" refers to the fte worked before the change in minimum wage.
+  * "fte_after" refers to the fte worked after the change in minimum wage.
+  * "chain1" to "chain4" are dummy variables for different types of chains.
+
+Note that when you are replicating the results (up to 1 decimal place) will be different due to the way of removing missing observations and simplifications in the number of included variables.
+
+1. What is the 'natural experiment' in this study?
+*the raise the minimum wagein new jersey*
+!!! **definition so what it is -> to what it is here** !!!
+
+2. Download the _MinWageData.Rdata_ dataset and load this cleaned data set.
+
+3. Check if the two states are similar in terms of their employment statistics. Plot the histograms of variable "fte" for the two states separately, and print the summary statistics of "fte" for each state. According to the histograms and summaries, do the states have different employment patterns before the minimum wage law? 
+
+```{r}
+install.packages("Tidyverse")
+df_zero <- subset(emp_df, state == 0)
+df_one <- subset(emp_df, state == 1)
+hist(df_zero$fte)
+hist(df_one$fte)
+summary(df_zero$fte)
+summary(df_one$fte)
+
+```
+**INTERPRETATION = they are similar even though histograms look similar -> summary show us that they are in deed similar in terms of mean and median**
+
+
+
+4. Check if the overall employment in the two states changed over time. Plot the histogram of "fte" before and after tax without differentiating the state variable. According to these plots, what are the differences in the overall wage consumption over time (before/after tax)?
+
+```{r}
+hist(df_zero$fte)
+hist(df_one$fte)
+hist(df_zero$fte_after)
+hist(df_one$fte_after)
+summary(df_zero$fte_after)
+summary(df_one$fte_after)
+```
+**INTERPRETATION = from the histogram we can see less skeweness in the data indicating more employees are willing to work longer and more since the introduction of the law. the summary shows median and means stayed similar => but the max and minimum values changes indicating differences between states**
+
+
+5. Estimate a baseline model that ignores the differences between states before the minimum wage increase, using only the employment after the minimum wage increase. Estimate a linear regression model where "fte_after" is a function of the "state" variable. Based on these estimation results, is there a significant employment difference between the states after the treatment?
+
+```{r}
+baseline_model <- lm(fte_after ~ state, emp_df)
+summary(baseline_model)
+```
+**INTERPRETATION = *it is insignificant*
+*in simple regression you dont have to factor but in multiple you have to* 
+
+
+6. Convert the data to long format before applying your diff-in-diff analysis. You can use function `pivot_longer` which is part of the "tidyverse" package. Double check that the long format has double the amount of observations for each variable compared to the short (wide) format that was originally provided.
+
+```{r}
+df_double <- emp_df%>%pivot_longer(col=c("fte", "fte_after"), names_to = "fte_type", values_to = "employment")
+```
+
+
+7. What is the meaning of the 'parallel  trends assumption' for the fte employment over time, in both states?
+
+**parallel trends assumption = although treatment and comparison groups may have different levels of the outcomes prior to the start of treatment, their trends in pre-treatment outcomes should be the same => meaning fte should have similar outcomes independent of states before treatment (after_fte)**
+
+
+8. Perform a difference in difference (DID) estimation to see the effect of the minimum wage change on employment (for the two states before and after the date of this change). Regress the "employment" variable on variables "state", "year" (converted to factors) and the interaction of state and year. 
+Note that the effect of the interaction between state and year is the difference in difference estimate, i.e. the effect of the minimum wage change controlling for the state and year effects on employment. 
+Interpret the coefficient of the interaction between state and year. Are the results in line with the expectations of the economic theory (as discussed in the introduction of this problem)?
+
+```{r}
+factor_state <- as.factor(df_double$state)
+factor_year <- as.factor(df_double$fte_type)
+empl_y <- df_double$employment
+
+
+
+did_regression <- lm(empl_y ~ factor_state + factor_year + factor_year*factor_state, data = df_double)
+summary(did_regression)
+```
+
+
+
+
+9. It is possible that other factors, other than "state" and "year" have an effect on employment. One such additional variable is the type of fast-food chain and whether the restaurant is co-owned: individuals working in a specific chain or co-owned restaurants can have different employment patterns. In order to analyze this possibility, extend the model in question 6 to include the variable "co-owned" and three additional dummy variables for the type of chain in the dataset: "chain1", "chain2", "chain3". (why should you not include "chain4" in this analysis?) Comment on the obtained results.
+
+
+```{r}
+
+```
+
+**INTERPRETATION = -> We cannot use more than 3 as a rule**
+* DID variable is still not significant so the conclusion of no effect from minimum wage change still holds* 
+*one chain variable is significant adn the state variable is sign. at the 5% level. so the chain indeed had an effect on employement differences but the did estimator is still insignificant*
+*
+
+10. What are the potential violations of the parallel trends assumption that would invalidate the results?
+
+
+**1. anticipation effects = if the treated anticipate positive effect from the trainig and stop looking for jobs = DiD will be biased => change behavoiur based on the anticipation** 
+
+**2. spillover effects = police go more to the 1 neighborough and the others will increase crime due to spillover**
+
+**3. cannot use intervention allocation determined by baseline outcome**
+
+
+https://www.publichealth.columbia.edu/research/population-health-methods/difference-difference-estimation 
+
+
+
+
+
+
